@@ -1,8 +1,9 @@
 # Google Colab Setup - Compile/Run
-USEFULL SHORTCUTS:
-1. Create a new code block: ctrl M B
-2. Run: ctrl ENTER
-
+  USEFULL SHORTCUTS:
+  1. Create a new code block: ctrl M B  
+  2. Run: ctrl ENTER
+  
+  STEPS:
   1. Go to https://colab.research.google.com/ and Click on "New Notebook".
   2. Click on Runtime >> Change >> Hardware Accelerator GPU.
   3. Check the version of CUDA by running the command line below:
