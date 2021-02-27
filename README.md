@@ -29,7 +29,7 @@
   9. Compile/run the code. In files, "Right Click >> Refresh". Then it will be appeared two files. "Resized Image", "Filtered Image". Download them.
  
 # Visualization - Matlab
-  1. Copy/paste the downloaded files in the folder where the matlab script is. (Folder: Visualisation)
+  1. Copy/paste the downloaded files in the folder where the matlab script is. (Folder: Visualization)
   2. Adjust "pictureSize", "patchSize" and "Name_of_file". Press Run.
 
 ![matlabScript](https://user-images.githubusercontent.com/77213227/109400000-d56c8100-794e-11eb-8d4b-9d0f7e7f6982.PNG)
