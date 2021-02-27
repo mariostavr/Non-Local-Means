@@ -26,6 +26,14 @@
 ![size](https://user-images.githubusercontent.com/77213227/109365079-00949900-7899-11eb-98e9-9a31fd0671ad.PNG)
 ![nameFIle](https://user-images.githubusercontent.com/77213227/109365082-02f6f300-7899-11eb-9bf3-b96e958d3eff.PNG)
 
+  9. Compile/run the code. In files it will be appeared two file. "Resized Image", "Filtered Image". Download them.
+ 
+# Visualization - Matlab
+  1. Copy paste the downloaded files in the folder where the script is.
+  2. Adjust "pictureSize", "patchSize" and "Name_of_file". Press Run.
+![matlabScript](https://user-images.githubusercontent.com/77213227/109400000-d56c8100-794e-11eb-8d4b-9d0f7e7f6982.PNG)
+
+
 
 
 
