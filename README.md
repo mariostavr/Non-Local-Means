@@ -16,7 +16,7 @@
   5. Load extension by running the followed command line. (Write code in a Seperate code Block and Run that)
      >> %load_ext nvcc_plugin
 ![extension](https://user-images.githubusercontent.com/77213227/109364687-02119180-7898-11eb-85c9-b9a69e3d73ac.PNG)
-  6. Create a new code block for the code and copy/paste the code from text file "NonLocalMeans_CUDA.cu"
+  6. Create a new code block for the code and copy/paste the code from text file "CUDA_NonLocalMeans.cu"
   7. Click on Files Icon and upload the images. (Text Files)
 ![files](https://user-images.githubusercontent.com/77213227/109365237-62550300-7899-11eb-9cd3-999c2c83618c.PNG)
   8. Adjust "pictureSize", "patchSize" and "Name_of_file"
