@@ -22,6 +22,7 @@
 ![files](https://user-images.githubusercontent.com/77213227/109365237-62550300-7899-11eb-9cd3-999c2c83618c.PNG)
 
   8. Adjust "pictureSize", "patchSize" and "Name_of_file"
+  
 ![size](https://user-images.githubusercontent.com/77213227/109365079-00949900-7899-11eb-98e9-9a31fd0671ad.PNG)
 ![nameFIle](https://user-images.githubusercontent.com/77213227/109365082-02f6f300-7899-11eb-9bf3-b96e958d3eff.PNG)
 
