@@ -5,7 +5,7 @@
   
   STEPS:
   1. Go to https://colab.research.google.com/ and Click on "New Notebook".
-  2. Click on Runtime >> Change >> Hardware Accelerator GPU.
+  2. Click on Runtime >> Change Runtime Type >> Hardware Accelerator GPU.
   3. Check the version of CUDA by running the command line below:
      >> !nvcc --version
 ![version](https://user-images.githubusercontent.com/77213227/109364442-831c5900-7897-11eb-9d7c-3bba4fc15204.PNG)
@@ -26,7 +26,7 @@
 ![size](https://user-images.githubusercontent.com/77213227/109365079-00949900-7899-11eb-98e9-9a31fd0671ad.PNG)
 ![nameFIle](https://user-images.githubusercontent.com/77213227/109365082-02f6f300-7899-11eb-9bf3-b96e958d3eff.PNG)
 
-  9. Compile/run the code. In files it will be appeared two file. "Resized Image", "Filtered Image". Download them.
+  9. Compile/run the code. In files, "Right Clicl >> Refresh". Then it will be appeared two files. "Resized Image", "Filtered Image". Download them.
  
 # Visualization - Matlab
   1. Copy paste the downloaded files in the folder where the script is.
