@@ -1,0 +1,187 @@
+%%cu
+#include "stdio.h"
+#include <stdlib.h>
+#include <math.h>
+#include <chrono>
+#include <unistd.h> //For sleep()
+
+#define pictureSize XXX
+#define patchSize X
+
+__shared__ double sharedGauss[patchSize*patchSize];
+
+//========================== Function Gaussian filter ==========================
+__global__ void FilterCreation(double *GKernel){
+    int i, j;
+    int var = (patchSize-1)/2;
+    double patchSigma = 1.6;
+    double r, s = 2.0*patchSigma*patchSigma;
+    for (i=-var; i<=var; i++) {
+        for (j=-var; j<=var; j++) {
+            r = (i*i+j*j);
+            *(GKernel + (i+var)*patchSize + (j+var)) = exp(-(r/(M_PI*s)));
+        }
+    }
+    for (i=0; i<patchSize; i++)
+        for (j=0; j<patchSize; j++)
+            *(sharedGauss + i*patchSize+j) = *(GKernel + i*patchSize+j);
+}//=============================================================================
+
+//================================ Input Image =================================
+void loadInputImage(float *image){
+    int i, j;
+    FILE *inFile;
+    inFile = fopen("Name_of_file.txt","r");
+    printf("Original Image is Loading...\n");
+    for(i=0; i<pictureSize; i++)
+        for(j=0; j<pictureSize; j++)
+            fscanf(inFile, "%f", (image + i*pictureSize+j));
+    fclose(inFile);
+    printf("Original Image Loaded!\n");
+}//=============================================================================
+
+//================================ Resize Image ================================
+void resizeImage(float *resizedImage, float *image){
+    int i, j;
+    int var = (patchSize-1)/2;
+    int rSize = pictureSize + (patchSize-1);
+    printf("Resizing the Image...\n");
+    float upSide=0, downSide=0, leftSide=0, rightSide=0;
+    for(i=0; i<pictureSize; i++){
+        upSide += *(image + 0*pictureSize + i);
+        downSide += *(image + (pictureSize-1)*pictureSize + i);
+        leftSide += *(image + i*pictureSize + 0);
+        rightSide += *(image + (pictureSize-1)*pictureSize + i);
+    }
+    for(i=0; i<var; i++){
+        for(j=0; j<rSize; j++){
+            *(resizedImage + i*rSize + j) = upSide/pictureSize;
+            *(resizedImage + (pictureSize+var+i)*rSize + j) = downSide/pictureSize;
+            *(resizedImage + j*rSize + i) = leftSide/pictureSize;
+            *(resizedImage + j*rSize + (pictureSize+var+i)) = rightSide/pictureSize;
+        }
+    }
+    for(i=var; i<rSize-var; i++)
+        for(j=var; j<rSize-var; j++)
+            *(resizedImage + i*rSize + j) = *(image + (i-var)*pictureSize + (j-var));
+    printf("Resized Image!\n");
+}//=============================================================================
+
+//================================== PATCHES ===================================
+__global__ void loadPatches(float *patches, float *resizedImage){
+    int i, j, p, counterP=0;
+    int var = (patchSize-1)/2;
+    int rSize = pictureSize + (patchSize-1);
+    int wSize = pictureSize*pictureSize;
+    printf("Initializing Patches...\n");
+    float patch[patchSize*patchSize];
+    for(i=var; i<(rSize-var); i++){
+        for(j=var; j<(rSize-var); j++){
+            int row = i-var;
+            int co;
+            int ct;
+            for (co=0; co<patchSize; co++){
+                int col = j-var;
+                for (ct=0; ct<patchSize; ct++){
+                    *(patch + co*patchSize + ct) = *(resizedImage + row*rSize + col);
+                    col++;
+                }
+                row++;
+            }
+            for(p=0; p<patchSize*patchSize; p++)
+                *(patches + (counterP*patchSize*patchSize) + p) = patch[p];
+            counterP++;
+        }
+    }
+    printf("Patches Initialized!\n");
+    printf("Applying Gaussian Filter on Patches...\n");
+    for (i=0; i<wSize; i++)
+        for (j=0; j<patchSize*patchSize; j++)
+                *(patches + i*patchSize*patchSize + j) = *(patches + i*patchSize*patchSize + j) * sharedGauss[j];
+    printf("Gaussian Filter Applied!\n");
+}//=============================================================================
+
+//============================ NON LOCAL MEANS =================================
+__global__ void nonlocalmeans(float *image, float *patches, float *weight, float *imageF){
+    int j, w;
+    int wSize = pictureSize*pictureSize;
+    int globalIdx = blockIdx.x * blockDim.x + threadIdx.x;
+    //========================================================================== Calcultaing Current (Weight - Filtered Image)
+    float filterSigma = 0.02, sumWeight=0, result=0.0;
+    for (j=0; j<wSize; j++){
+        for (w=0; w<patchSize*patchSize; w++){
+            result = (*(patches+globalIdx*patchSize*patchSize+w) - *(patches+j*patchSize*patchSize+w));
+            weight[j] += result*result;
+        }
+        weight[j]= exp(-(weight[j]/filterSigma));
+        sumWeight += weight[j];
+        imageF[globalIdx] += (weight[j] * image[j]);
+    }
+    imageF[globalIdx] = imageF[globalIdx] / sumWeight;
+}//=============================================================================
+
+int main(){
+    FILE *outFile;
+    int i,j;
+    int rSize = pictureSize + (patchSize-1);
+    int wSize = pictureSize*pictureSize;
+
+    float *image = (float *)malloc(pictureSize*pictureSize*sizeof(float));
+    loadInputImage(image);
+    float *dev_image;
+    cudaMalloc((void **)&dev_image, pictureSize*pictureSize*sizeof(float));
+    cudaMemcpy(dev_image, image, pictureSize*pictureSize*sizeof(float), cudaMemcpyHostToDevice);
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    float *resizedImage = (float *)malloc(rSize*rSize*sizeof(float));
+    resizeImage(resizedImage, image);
+    float *dev_resizedImage;
+    cudaMalloc((void **)&dev_resizedImage, rSize*rSize*sizeof(float));
+    cudaMemcpy(dev_resizedImage, resizedImage, rSize*rSize*sizeof(float), cudaMemcpyHostToDevice);
+
+    printf("Initializing Gaussian Filter...\n");
+    double *dev_gaussFilter;
+    cudaMalloc((void **)&dev_gaussFilter, patchSize*patchSize*sizeof(float));
+    FilterCreation<<<1,1>>>(dev_gaussFilter);
+    
+    float *dev_patches;
+    cudaMalloc((void **)&dev_patches, wSize*patchSize*patchSize*sizeof(float));
+    
+    loadPatches<<<1,1>>>(dev_patches, dev_resizedImage);
+
+    float *dev_weight;
+    cudaMalloc((void **)&dev_weight, wSize*sizeof(float));
+
+    float *filteredImage = (float *)malloc(wSize*sizeof(float));
+    float *dev_filteredImage;
+    cudaMalloc((void **)&dev_filteredImage, wSize*sizeof(float));
+
+    nonlocalmeans<<<pictureSize,pictureSize>>>(dev_image, dev_patches, dev_weight, dev_filteredImage);
+    
+    //sleep(2); //Sleep 2 seconds.
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+
+    cudaMemcpy(resizedImage, dev_resizedImage, rSize*rSize*sizeof(float), cudaMemcpyDeviceToHost);
+    outFile = fopen("Resized Image.txt", "w");
+    for (i=0; i<rSize; i++)
+        for (j=0; j<rSize; j++)
+        fprintf(outFile,"%f ", *(resizedImage+i*rSize+j));
+    fclose(outFile);
+
+    cudaMemcpy(filteredImage, dev_filteredImage, wSize*sizeof(float), cudaMemcpyDeviceToHost);
+    outFile = fopen("Filtered Image.txt", "w");
+    for(i=0; i<pictureSize; i++) {
+        for(j=0; j<pictureSize; j++)
+             fprintf(outFile,"%f ",*(filteredImage+i*pictureSize+j));
+        fprintf(outFile, "\n");
+    }
+    fclose(outFile);
+    printf("Filtered Image Created!\n");
+
+    printf("Time measured: %.8f seconds.\n", elapsed.count() * 1e-9);
+
+    return 0;
+}
