@@ -1,8 +1,8 @@
 
 
 
-MyImage = imread('JPG/Lena_256.png');
-dlmwrite('TXT/lena.txt',MyImage,'delimiter','\t');
+MyImage = imread('Name_of_file.jpg');
+dlmwrite('New_file_name.txt',MyImage,'delimiter','\t');
 
 
 
